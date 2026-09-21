@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RZ Garage</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+:root{--bg:#070707;--panel:#0b0b0b;--line:#292929;--text:#f2f2f2;--muted:#8b8b8b;--red:#ff1725;--red2:#c90814;--g:#19d3a2;--r:#ff1725}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:Rajdhani,Arial;background:radial-gradient(circle at 80% 0,#2b230b55,transparent 30%),linear-gradient(#080b12ee,#080b12f8),repeating-linear-gradient(135deg,#fff1 0 1px,transparent 1px 8px)}
+.app{max-width:1500px;margin:auto;padding:28px 34px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.brand{display:flex;gap:12px;align-items:center}.mark{width:8px;height:45px;background:var(--red);clip-path:polygon(0 0,100% 10%,72% 100%,0 100%)}h1{margin:0;text-transform:uppercase;font-size:30px;letter-spacing:1px}small{color:var(--muted);font-family:"Share Tech Mono"}.btn{background:#0a1018;color:#9aa5b7;border:1px solid var(--line);padding:10px 15px;cursor:pointer}.layout{display:grid;grid-template-columns:285px 1fr;gap:18px}.side,.main{border:1px solid #2b2b2b;background:linear-gradient(180deg,#0d0d0df8,#080808f5);padding:20px;box-shadow:inset 0 1px 0 #ffffff08}.title{display:flex;gap:9px;align-items:center;text-transform:uppercase;font-weight:700;letter-spacing:1px;margin-bottom:18px}.title:before{content:"";width:5px;height:22px;background:var(--red)}.stat{border:1px solid var(--line);padding:14px;margin-bottom:12px}.stathead{display:flex;justify-content:space-between;text-transform:uppercase;font-weight:700}.bar{height:6px;background:#222b39;margin-top:10px}.fill{height:100%;background:var(--red)}.green{background:var(--g)}.red{background:var(--r)}.info{margin-top:28px;border-top:1px solid var(--line);padding-top:18px}.row{display:flex;justify-content:space-between;padding:7px 0;color:var(--muted)}.row b{color:var(--text)}.head{display:flex;gap:10px;margin-bottom:14px}.search{flex:1;border:1px solid var(--line);background:#090e16;display:flex}.search span{padding:10px 12px;color:#697487}.search input{width:100%;background:none;border:0;outline:0;color:white;padding:10px;font:16px Rajdhani}.tabs{display:flex}.tab{background:#0b0b0b;color:#797979;border:1px solid var(--line);padding:10px 16px;font-weight:700;cursor:pointer}.tab.active{color:white;border-color:var(--red);box-shadow:inset 0 -2px var(--red)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:8px}
+.card{
+  border:1px solid #3d4a61;
+  background:#101622;
+  cursor:pointer;
+  transition:.18s ease;
+  overflow:hidden;
+  position:relative;
+  min-width:0;
+}
+.card:hover{transform:translateY(-2px);border-color:#e8b91f;box-shadow:0 8px 24px #0008}
+.card.detido{border-color:#ff2030}
+.photo{
+  height:242px;
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,#171d2b 0%,#121722 56%,#0d121b 100%);
+}
+.photo:after{
+  content:"";
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(180deg,transparent 58%,rgba(2,5,9,.28) 76%,rgba(2,5,9,.82) 100%),
+    radial-gradient(circle at 50% 55%,rgba(255,255,255,.035),transparent 48%);
+}
+.car-photo{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center 40%;
+  display:block;
+  position:relative;
+  z-index:1;
+  padding:12px 10px 62px;
+  filter:saturate(.90) contrast(1.04);
+}
+.plate-ref{
+  position:absolute;
+  left:50%;
+  bottom:13px;
+  transform:translateX(-50%) perspective(200px) rotateX(3deg);
+  width:108px;
+  height:42px;
+  z-index:3;
+  border:2px solid #14294e;
+  border-radius:3px;
+  background:
+    linear-gradient(180deg,#dfe5ec 0%,#eef1f4 55%,#cbd3da 100%);
+  box-shadow:0 4px 10px #0009,0 0 0 1px #8fa0b7;
+  color:#182b4e;
+  text-align:center;
+  font-family:"Share Tech Mono",monospace;
+}
+.plate-ref:before{
+  content:"CIDADE RZ";
+  position:absolute;left:0;right:0;top:2px;
+  font-size:7px;font-weight:700;letter-spacing:1px;color:#17345f;
+}
+.plate-ref:after{
+  content:"";
+  position:absolute;right:5px;top:4px;width:8px;height:6px;
+  background:#11a95f;border-radius:1px;
+  box-shadow:0 0 0 1px #0b2e20;
+}
+.plate-main{
+  display:block;
+  padding-top:12px;
+  font-size:18px;
+  line-height:20px;
+  font-weight:700;
+  letter-spacing:1px;
+}
+.vehicle-banner{
+  position:absolute;
+  left:0;right:0;bottom:62px;z-index:4;
+  height:30px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(90deg,#5d1016ee,#a91824ee,#5d1016ee);
+  border-top:1px solid #ee3441;
+  border-bottom:1px solid #ee3441;
+  color:#fff;
+  font-family:"Share Tech Mono",monospace;
+  font-size:12px;font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+}
+.cardinfo{
+  height:44px;
+  border-top:1px solid #4a566d;
+  background:#0d121b;
+  display:grid;
+  grid-template-columns:38px 1fr auto;
+  align-items:stretch;
+}
+.iconbox{
+  display:flex;align-items:center;justify-content:center;
+  border-right:1px solid #4a566d;
+  color:#737c8e;
+  font-size:16px;
+}
+.cardmain{
+  min-width:0;
+  display:flex;align-items:center;
+  padding:0 10px;
+}
+.model{
+  font-size:17px;
+  line-height:1;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.cardstatus{
+  display:flex;align-items:center;
+  padding:0 10px;
+  color:#8690a0;
+  font:11px "Share Tech Mono",monospace;
+  white-space:nowrap;
+}
+.cardstatus.det{color:#ff6570}
+.cardstatus.out{color:#a9a0a0}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px}.modalbg{display:none;position:fixed;inset:0;background:#020408cc;backdrop-filter:blur(7px);align-items:center;justify-content:center;padding:20px;z-index:5}.modalbg.open{display:flex}.modal{width:min(700px,100%);background:#0c121c;border:1px solid #394457}.modalhead{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.modalhead h2{margin:0;text-transform:uppercase}.modalbody{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.big{height:230px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;background:#090e16}.detail{padding:10px 0;border-bottom:1px solid var(--line)}.detail label{display:block;color:var(--muted);font-size:12px;text-transform:uppercase}.detail b{font-size:18px}.actions{grid-column:1/-1;display:flex;gap:8px}.actions button{flex:1;padding:12px;border:1px solid var(--line);background:#0a1018;color:white;cursor:pointer;font-weight:700}.actions .primary{background:var(--red);color:#080b12;border-color:var(--red)}@media(max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:800px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.app{padding:15px 10px}.head{flex-wrap:wrap}.search{width:100%}.grid{grid-template-columns:1fr}.modalbody{grid-template-columns:1fr}}
+
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:
+linear-gradient(45deg,transparent 0 48%,#ff172518 48% 49%,transparent 49% 100%);
+opacity:.6}
+body:after{content:"";position:fixed;left:0;top:0;width:190px;height:145px;pointer-events:none;z-index:0;
+background:conic-gradient(from 45deg,#fff2 25%,transparent 0 50%,#fff2 0 75%,transparent 0) 0 0/36px 36px;
+mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
+.app{position:relative;z-index:1}
+
+.car-photo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+  filter:saturate(.92) contrast(1.02);
+}
+.modal-car-photo{
+  width:88%;
+  max-height:210px;
+  object-fit:contain;
+  display:block;
+  filter:saturate(.95) contrast(1.04);
+}
+.vehicle-banner{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  height:30px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(90deg,#450b10ee,#a91620ee,#450b10ee);
+  border-top:1px solid var(--red);border-bottom:1px solid var(--red);
+  color:#fff;font-family:"Share Tech Mono";font-size:12px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;
+}
+.photo{overflow:hidden}
+
+.auth-area{display:flex;align-items:center;gap:9px}
+.discord-user{display:none;align-items:center;gap:8px;padding:8px 11px;border:1px solid #2f3440;background:#0b0d11}
+.discord-user.visible{display:flex}
+.discord-dot{width:8px;height:8px;border-radius:50%;background:#5865f2;box-shadow:0 0 10px #5865f255}
+.discord-name{font-weight:700}
+.login-btn{border-color:#5865f2;color:#e9e9ef;background:#11131a}
+.login-btn:hover{border-color:#7b83ff;box-shadow:0 0 14px #5865f222}
+.logout-btn{display:none}
+.managebar{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.manage-btn{border:1px solid var(--red);background:linear-gradient(180deg,#3a0f13,#16090b);color:#fff;padding:10px 14px;cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.manage-btn.locked{border-color:#333;color:#777;background:#0b0b0b;cursor:not-allowed}
+.manage-hint{margin-left:auto;color:#777;font:11px "Share Tech Mono",monospace}
+.delete-mini{
+  position:absolute;left:8px;top:8px;z-index:4;
+  width:28px;height:28px;border:1px solid #ff1725aa;background:#12090a;color:#ff5360;
+  display:none;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+}
+.card.admin-visible .delete-mini{display:flex}
+.delete-mini:hover{background:#ff1725;color:#fff}
+.auth-modal-bg{display:none;position:fixed;inset:0;z-index:30;background:#020408cc;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
+.auth-modal-bg.open{display:flex}
+.auth-modal{width:min(420px,100%);background:#0b0d12;border:1px solid #343a47;box-shadow:0 20px 60px #000b}
+.auth-modal .head2{padding:18px;border-bottom:1px solid #2b303a;display:flex;justify-content:space-between;align-items:center}
+.auth-modal .body2{padding:20px;color:#a6adba;line-height:1.5}
+.auth-modal .body2 strong{color:#fff}
+.demo-login{
+  margin-top:15px;width:100%;padding:12px;border:1px solid #5865f2;background:#151824;color:#fff;
+  cursor:pointer;font-weight:700;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand">
+    <div class="mark"></div>
+    <div><h1>RZ Garage</h1><small>RZ CREW • GARAGE SYSTEM</small></div>
+  </div>
+  <div class="auth-area">
+    <div class="discord-user" id="discordUser">
+      <span class="discord-dot"></span>
+      <span class="discord-name" id="discordName">Discord</span>
+      <button class="btn" id="logoutBtn">SAIR</button>
+    </div>
+    <button class="btn login-btn" id="loginBtn">ENTRAR COM DISCORD</button>
+  </div>
+</header>
+<main class="layout">
+<aside class="side">
+<div class="title">Resumo</div>
+<div class="stat"><div class="stathead"><span>🚗 Total</span><span id="total">8</span></div><div class="bar"><div class="fill" style="width:100%"></div></div></div>
+<div class="stat"><div class="stathead"><span>🟢 Na garagem</span><span id="garage">6</span></div><div class="bar"><div class="fill green" id="gbar"></div></div></div>
+<div class="stat"><div class="stathead"><span>🔴 Detidos</span><span id="detained">2</span></div><div class="bar"><div class="fill red" id="rbar"></div></div></div>
+<div class="info"><div class="title">Informações</div><div class="row"><span>Organização</span><b>RZ Crew</b></div><div class="row"><span>Sistema</span><b>RZ Garage</b></div><div class="row"><span>Atualização</span><b>agora</b></div></div>
+</aside>
+<section class="main">
+  <div class="title">RZ Crew • Garagem</div>
+  <div class="managebar">
+    <button class="manage-btn locked" id="addBtn">＋ ADICIONAR VEÍCULO</button>
+    <span class="manage-hint" id="manageHint">🔒 Entre com Discord para adicionar ou remover veículos</span>
+  </div>
+  <div class="head"><div class="search"><span>⌕</span><input id="search" placeholder="Pesquisar veículo, placa ou proprietário..."></div><div class="tabs"><button class="tab active" data-f="todos">Todos</button><button class="tab" data-f="garagem">Garagem</button><button class="tab" data-f="detido">Detidos</button></div></div><div class="grid" id="grid"></div></section>
+</main></div>
+
+
+<div class="auth-modal-bg" id="authModalBg">
+  <div class="auth-modal">
+    <div class="head2">
+      <strong id="authTitle">Login com Discord</strong>
+      <button class="btn" id="authClose">×</button>
+    </div>
+    <div class="body2">
+      <strong>Adicionar e remover veículos exigem login.</strong><br>
+      Alterar o status continua liberado para qualquer pessoa.
+      <button class="demo-login" id="demoLogin">ENTRAR (MODO DE TESTE)</button>
+    </div>
+  </div>
+</div>
+
+<div class="auth-modal-bg" id="addModalBg">
+  <div class="auth-modal">
+    <div class="head2">
+      <strong>Adicionar veículo</strong>
+      <button class="btn" id="addClose">×</button>
+    </div>
+    <div class="body2">
+      <div style="display:grid;gap:9px">
+        <input id="newModel" placeholder="Modelo" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
+        <input id="newPlate" placeholder="Placa" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
+        <input id="newOwner" placeholder="Proprietário" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
+        <button class="demo-login" id="confirmAdd">ADICIONAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modalbg" id="modalbg"><div class="modal"><div class="modalhead"><h2 id="mtitle">Veículo</h2><button class="btn" id="close">×</button></div><div class="modalbody"><div class="big"><div id="mcar" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"></div></div><div><div class="detail"><label>Modelo</label><b id="mmodel"></b></div><div class="detail"><label>Placa</label><b id="mplate"></b></div><div class="detail"><label>Proprietário</label><b id="mowner"></b></div><div class="detail"><label>Status</label><b id="mstatus"></b></div></div><div class="actions"><button class="primary" id="toggle">Alterar status</button><button>Editar veículo</button><button id="remove">Remover</button></div></div></div></div>
+
+<script>
+
+let currentUser = null; // Real Discord OAuth will set this object later.
+
+function openAuthModal(){
+  $("authModalBg").classList.add("open");
+}
+function closeAuthModal(){
+  $("authModalBg").classList.remove("open");
+}
+function updateAuthUI(){
+  const logged = !!currentUser;
+  $("loginBtn").style.display = logged ? "none" : "inline-block";
+  $("discordUser").classList.toggle("visible", logged);
+  $("addBtn").classList.toggle("locked", !logged);
+  $("manageHint").textContent = logged
+    ? "✓ Logado: você pode adicionar e remover veículos"
+    : "🔒 Entre com Discord para adicionar ou remover veículos";
+  if(logged){
+    $("discordName").textContent = currentUser.username || "Discord";
+    $("logoutBtn").style.display = "inline-block";
+  }else{
+    $("logoutBtn").style.display = "none";
+  }
+  render();
+}
+function requireLogin(action){
+  if(currentUser) return true;
+  openAuthModal();
+  return false;
+}
+function requestDelete(id){
+  if(!requireLogin("remover")) return;
+  const car = cars.find(c=>c.id===id);
+  if(!car) return;
+  if(!confirm(`Remover ${car.model} (${car.plate}) da garagem?`)) return;
+  const i = cars.indexOf(car);
+  if(i>-1) cars.splice(i,1);
+  render();
+}
+function addVehicle(){
+  if(!requireLogin("adicionar")) return;
+  $("addModalBg").classList.add("open");
+}
+function closeAddModal(){
+  $("addModalBg").classList.remove("open");
+}
+
+const cars=[
+{id:1,model:"DRAUGUR",plate:"313QW7L",owner:"RZ Crew",status:"ipva",img:"./assets/drau.jpg",statusLabel:"IPVA EM DÉBITO"},
+{id:2,model:"KANJO SJ",plate:"A04DENO",owner:"RZ Crew",status:"garagem",img:"./assets/kanjo1.jpg"},
+{id:3,model:"CLUB VIII",plate:"R9WEJ1A",owner:"RZ Crew",status:"garagem",img:"./assets/clubviii.jpg"},
+{id:4,model:"SENTINEL VIII",plate:"47HUNV1",owner:"RZ Crew",status:"garagem",img:"./assets/sentviii.jpg"},
+{id:5,model:"ELEGY RH8",plate:"Z76W565",owner:"RZ Crew",status:"garagem",img:"./assets/elegy.jpg"},
+{id:6,model:"SUNRISEX",plate:"35YTRQG",owner:"RZ Crew",status:"garagem",img:"./assets/sunrisex.jpg"},
+{id:7,model:"CLUBXR",plate:"BOLINHA",owner:"RZ Crew",status:"garagem",img:"./assets/clubxr.jpg"},
+{id:8,model:"TOKAGE II",plate:"B70EBQW",owner:"RZ Crew",status:"garagem",img:"./assets/tokage.jpg"},
+{id:9,model:"ZR350 III",plate:"N8GBZBY",owner:"RZ Crew",status:"garagem",img:"./assets/zr350.jpg"},
+{id:10,model:"SHEVA II",plate:"I5CSMAA",owner:"RZ Crew",status:"detido",img:"./assets/sheava1.jpg",statusLabel:"DETIDO"},
+{id:11,model:"SHEVA II",plate:"F1BNWDY",owner:"RZ Crew",status:"garagem",img:"./assets/sheava2.jpg"},
+{id:12,model:"S95",plate:"BIGAS86",owner:"RZ Crew",status:"garagem",img:"./assets/s95_1.jpg"},
+{id:13,model:"NINEF II",plate:"X74W1VC",owner:"RZ Crew",status:"fora",img:"./assets/ninef.jpg",statusLabel:"FORA DA GARAGEM"},
+{id:14,model:"BF400",plate:"I31AUU9",owner:"RZ Crew",status:"detido",img:"./assets/bf400.jpg",statusLabel:"DETIDO"},
+{id:15,model:"S95",plate:"S64NCSF",owner:"RZ Crew",status:"fora",img:"./assets/s95_2.jpg",statusLabel:"FORA DA GARAGEM"},
+{id:16,model:"S2K",plate:"DYRAMPA",owner:"RZ Crew",status:"fora",img:"./assets/s2k.jpg",statusLabel:"FORA DA GARAGEM"},
+{id:17,model:"ELEGY RH8",plate:"N4BDWGT",owner:"RZ Crew",status:"garagem",img:"./assets/elegyrh4.jpg"},
+{id:18,model:"KANJO SJ",plate:"J9JES4Y",owner:"RZ Crew",status:"garagem",img:"./assets/kanjo2.jpg"},
+{id:19,model:"S95",plate:"S6KM51M",owner:"RZ Crew",status:"fora",img:"./assets/s95_3.jpg",statusLabel:"FORA DA GARAGEM"},
+{id:20,model:"BF",plate:"U3PMS75",owner:"RZ Crew",status:"garagem",img:"./assets/bf.jpg"},
+{id:21,model:"STILLETTO",plate:"N2VT67C",owner:"RZ Crew",status:"garagem",img:"./assets/stiletto.jpg"}
+];
+
+let filter="todos",selected=null;
+const $=id=>document.getElementById(id);
+function render(){
+  let q=$("search").value.toLowerCase(), list=cars.filter(c=>
+    (filter=="todos"||(filter=="garagem"&&c.status=="garagem")||(filter=="detido"&&c.status=="detido")) &&
+    (`${c.model} ${c.plate} ${c.owner}`).toLowerCase().includes(q)
+  );
+
+  $("grid").innerHTML=list.length?list.map(c=>{
+    const isDet=c.status=="detido";
+    const statusText =
+      c.status=="garagem" ? "Na garagem" :
+      c.status=="detido" ? "Detido" :
+      c.status=="fora" ? "Na garagem" :
+      "IPVA";
+    const statusClass =
+      c.status=="detido" ? "det" :
+      (c.status=="fora" || c.status=="ipva") ? "out" : "";
+
+    return `<article class="card ${isDet?"detido":""} ${currentUser?"admin-visible":""}" onclick="toggleVehicleStatus(${c.id})"><button class="delete-mini" title="Remover veículo" onclick="event.stopPropagation();requestDelete(${c.id})">×</button>
+      <div class="photo">
+        <img class="car-photo" src="${c.img}" alt="${c.model}">
+        <div class="plate-ref"><span class="plate-main">${c.plate}</span></div>
+      </div>
+      <div class="cardinfo">
+        <div class="iconbox">🚘</div>
+        <div class="cardmain"><div class="model">${c.model}</div></div>
+        <div class="cardstatus ${statusClass}">${statusText}</div>
+      </div>
+    </article>`;
+  }).join(""):`<div class="empty">Nenhum veículo encontrado.</div>`;
+
+  let g=cars.filter(c=>c.status=="garagem").length,d=cars.filter(c=>c.status=="detido").length;
+  $("total").textContent=cars.length;
+  $("garage").textContent=g;
+  $("detained").textContent=d;
+  $("gbar").style.width=(g/cars.length*100)+"%";
+  $("rbar").style.width=(d/cars.length*100)+"%";
+}
+
+function toggleVehicleStatus(id){
+  const car = cars.find(c => c.id === id);
+  if(!car) return;
+
+  // Only the two operational statuses are toggled by clicking the vehicle.
+  car.status = car.status === "garagem" ? "detido" : "garagem";
+  render();
+}
+
+function openCar(id){
+ selected=cars.find(c=>c.id==id);
+ $("mtitle").textContent=selected.model;
+ $("mmodel").textContent=selected.model;
+ $("mplate").textContent=selected.plate;
+ $("mowner").textContent=selected.owner;
+ $("mstatus").textContent=selected.statusLabel || (selected.status=="garagem"?"🟢 NA GARAGEM":"🔴 DETIDO");
+ $("mcar").innerHTML=`<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><img class="modal-car-photo" src="${selected.img}" alt="${selected.model}"><div class="plate-ref" style="bottom:14px">${selected.plate}</div></div>`;
+ $("modalbg").classList.add("open");
+}
+$("close").onclick=()=>{$("modalbg").classList.remove("open");selected=null};
+$("modalbg").onclick=e=>{if(e.target===$("modalbg"))$("close").click()};
+$("search").oninput=render;
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");filter=b.dataset.f;render()
+});
+$("toggle").onclick=()=>{
+  if(!selected)return;
+  selected.status=selected.status=="garagem"?"detido":"garagem";
+  selected.statusLabel=selected.status=="detido"?"DETIDO":undefined;
+  openCar(selected.id);render()
+};
+$("remove").onclick=()=>{
+  if(!selected)return;
+  let i=cars.indexOf(selected);cars.splice(i,1);
+  $("close").click();render()
+};
+
+
+$("loginBtn").onclick = openAuthModal;
+$("authClose").onclick = closeAuthModal;
+$("logoutBtn").onclick = ()=>{ currentUser=null; updateAuthUI(); };
+$("addBtn").onclick = addVehicle;
+$("addClose").onclick = closeAddModal;
+$("demoLogin").onclick = ()=>{
+  // Temporary local test only. This is NOT the real Discord OAuth flow.
+  currentUser = {username:"RZ Crew • teste"};
+  closeAuthModal();
+  updateAuthUI();
+};
+$("confirmAdd").onclick = ()=>{
+  if(!currentUser) return openAuthModal();
+  const model=$("newModel").value.trim();
+  const plate=$("newPlate").value.trim();
+  const owner=$("newOwner").value.trim() || currentUser.username;
+  if(!model || !plate){ alert("Preencha modelo e placa."); return; }
+  cars.push({
+    id:Date.now(), model, plate, owner, status:"garagem",
+    color:"blue", img:cars[0]?.img || "./assets/clubviii.jpg"
+  });
+  $("newModel").value=""; $("newPlate").value=""; $("newOwner").value="";
+  closeAddModal();
+  render();
+};
+$("authModalBg").onclick=e=>{ if(e.target===$("authModalBg")) closeAuthModal(); };
+$("addModalBg").onclick=e=>{ if(e.target===$("addModalBg")) closeAddModal(); };
+
+render();
+
+</script>
+</body>
+</html>
+<script>updateAuthUI();</script>
