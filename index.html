@@ -289,70 +289,7 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 .cardtools .delete-text:hover{color:#fff;background:#3a0f13}
 
 
-/* Reference-style status ribbon on the vehicle photo */
-.photo{
-  position:relative;
-  overflow:hidden;
-}
-.photo-status{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:78px;
-  min-height:34px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:6px 12px;
-  box-sizing:border-box;
-  border-top:1px solid currentColor;
-  border-bottom:1px solid currentColor;
-  background:rgba(92,18,22,.88);
-  color:#fff;
-  font:700 14px "Share Tech Mono",monospace;
-  text-transform:uppercase;
-  letter-spacing:.5px;
-  text-shadow:0 1px 2px rgba(0,0,0,.55);
-  z-index:3;
-}
-.photo-status.detido{
-  background:linear-gradient(90deg,rgba(110,17,24,.88),rgba(145,30,37,.8),rgba(110,17,24,.88));
-  color:#fff;
-  box-shadow:inset 0 1px rgba(255,255,255,.08), inset 0 -1px rgba(0,0,0,.3);
-}
-.photo-status.ipva{
-  background:linear-gradient(90deg,rgba(101,73,9,.92),rgba(173,129,16,.84),rgba(101,73,9,.92));
-  color:#fff4c6;
-  box-shadow:inset 0 1px rgba(255,255,255,.08), inset 0 -1px rgba(0,0,0,.3);
-}
-.photo-status.combo{
-  background:linear-gradient(90deg,rgba(110,17,24,.9),rgba(135,31,30,.9),rgba(102,69,8,.9));
-}
-
-
-.photo .plate-ref{
-  position:relative;
-  z-index:4;
-}
-
-
-/* Final card polish: owner + plate */
-.cardinfo{
-  height:58px;
-}
-.cardmain{
-  justify-content:center;
-  min-width:0;
-}
-.owner-line{
-  margin-top:4px;
-  color:#c1c7d1;
-  font:600 12px "Share Tech Mono",monospace;
-  line-height:1.1;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+/* Final plate visibility */
 .plate-ref{
   bottom:32px !important;
   width:116px !important;
@@ -364,19 +301,16 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
   font-size:19px;
   line-height:21px;
 }
-.photo::after{
-  z-index:2;
-}
 .photo-status{
   bottom:72px !important;
   z-index:8 !important;
 }
-
-
-/* Plate strip: exactly between the photo and vehicle data */
-.photo{
-  overflow:hidden;
+.owner-line{
+  font-size:12px !important;
 }
+
+
+/* FINAL CARD VISUALS */
 .plate-strip{
   height:58px;
   position:relative;
@@ -653,23 +587,41 @@ async function toggleIPVA(id, checked){
   const car = cars.find(c => String(c.id) === String(id));
   if(!car) return;
 
+  const nextValue = Boolean(checked);
   const oldValue = Boolean(car.ipva_em_atraso);
-  car.ipva_em_atraso = Boolean(checked);
-  render();
 
-  // Seed fallback is local-only until migrated.
-  if(String(id).startsWith("seed-")) return;
+  // Seed/fallback cards are not persisted until migration.
+  if(String(id).startsWith("seed-")){
+    car.ipva_em_atraso = nextValue;
+    render();
+    return;
+  }
 
-  const { error } = await supabaseClient
-    .from("vehicles")
-    .update({ ipva_em_atraso: Boolean(checked) })
-    .eq("id", car.id);
+  try{
+    const { data, error } = await supabaseClient
+      .from("vehicles")
+      .update({ ipva_em_atraso: nextValue })
+      .eq("id", car.id)
+      .select("id, ipva_em_atraso")
+      .single();
 
-  if(error){
+    if(error) throw error;
+
+    if(!data || Boolean(data.ipva_em_atraso) !== nextValue){
+      throw new Error("O Supabase não confirmou a alteração do IPVA.");
+    }
+
+    // Only update the UI after the database confirms the change.
+    car.ipva_em_atraso = Boolean(data.ipva_em_atraso);
+    render();
+  }catch(error){
     car.ipva_em_atraso = oldValue;
     render();
-    console.error(error);
-    alert("Não foi possível atualizar o IPVA.\n\n" + error.message);
+    console.error("IPVA update:", error);
+    alert(
+      "Não foi possível salvar o IPVA.\n\n" +
+      (error?.message || "Erro desconhecido")
+    );
   }
 }
 
