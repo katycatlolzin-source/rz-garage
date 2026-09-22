@@ -183,8 +183,8 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 .manage-hint{margin-left:auto;color:#777;font:11px "Share Tech Mono",monospace}
 .delete-mini{
   position:absolute;left:8px;top:8px;z-index:4;
-  width:28px;height:28px;border:1px solid #ff1725aa;background:#12090a;color:#ff5360;
-  display:none;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+  width:30px;height:30px;border:1px solid #ff1725;background:#19090b;color:#ff5360;font-weight:800;box-shadow:0 0 10px #ff172533;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
 }
 .card.admin-visible .delete-mini{display:flex}
 .delete-mini:hover{background:#ff1725;color:#fff}
@@ -216,6 +216,13 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 .photo-preview.visible{display:block}
 .photo-drop.has-image .photo-drop-content{display:none}
 .photo-help{color:#707888;font:10px "Share Tech Mono",monospace}
+
+.delete-text{
+  border:0;border-left:1px solid #3b2327;background:transparent;color:#ff5360;
+  padding:0 8px;font:10px "Share Tech Mono",monospace;cursor:pointer;
+}
+.delete-text:hover{color:#fff;background:#3a0f13}
+.cardinfo{grid-template-columns:38px 1fr auto auto}
 </style>
 </head>
 <body>
@@ -393,6 +400,7 @@ function render() {
         <div class="iconbox">🚘</div>
         <div class="cardmain"><div class="model">${c.model}</div></div>
         <div class="cardstatus ${statusClass}">${statusText}</div>
+        ${isGarageAdmin ? `<button class="delete-text" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">REMOVER</button>` : ""}
       </div>
     </article>`;
   }).join("") : `<div class="empty">Nenhum veículo encontrado.</div>`;
