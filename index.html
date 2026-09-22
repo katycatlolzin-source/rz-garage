@@ -182,9 +182,9 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 .manage-btn.locked{border-color:#333;color:#777;background:#0b0b0b;cursor:not-allowed}
 .manage-hint{margin-left:auto;color:#777;font:11px "Share Tech Mono",monospace}
 .delete-mini{
-  position:absolute;left:8px;top:8px;z-index:4;
+  position:absolute;left:8px;top:8px;z-index:6;display:flex;align-items:center;justify-content:center;
   width:28px;height:28px;border:1px solid #ff1725aa;background:#12090a;color:#ff5360;
-  display:none;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+  cursor:pointer;font-size:15px;
 }
 .card.admin-visible .delete-mini{display:flex}
 .delete-mini:hover{background:#ff1725;color:#fff}
@@ -384,7 +384,7 @@ function render() {
       (c.status === "fora" || c.status === "ipva") ? "out" : "";
 
     return `<article class="card ${isDet ? "detido" : ""}" onclick="toggleVehicleStatus('${c.id}')">
-      ${isGarageAdmin ? `<button class="delete-mini" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">×</button>` : ""}
+      ${isGarageAdmin ? `<button class="delete-mini" title="Remover veículo" aria-label="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">×</button>` : ""}
       <div class="photo">
         <img class="car-photo" src="${c.img}" alt="${c.model}">
         <div class="plate-ref"><span class="plate-main">${c.plate}</span></div>
@@ -508,7 +508,7 @@ function updateAuthUI() {
   $("addBtn").classList.toggle("locked", !isGarageAdmin);
 
   if(isGarageAdmin) {
-    $("manageHint").textContent = "✓ Administrador da garagem: pode adicionar e remover veículos";
+    $("manageHint").textContent = "✓ Administrador da garagem: pode adicionar e remover veículos • clique no × vermelho para remover";
   } else if(logged) {
     $("manageHint").textContent = "✓ Logado: status liberado; cadastro/remoção restritos";
   } else {
