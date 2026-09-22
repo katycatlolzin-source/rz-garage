@@ -223,6 +223,71 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 }
 .delete-text:hover{color:#fff;background:#3a0f13}
 .cardinfo{grid-template-columns:38px 1fr auto auto}
+.tab.ipva-tab.active{border-color:#d6a11a;background:linear-gradient(#33250a,#130e04);color:#f6d26a;box-shadow:inset 0 -2px #d6a11a}
+.cardstatus.ipva{color:#f0c75a}
+
+/* Independent IPVA checkbox + owner line */
+.cardinfo{
+  height:58px;
+  border-top:1px solid #4a566d;
+  background:#0d121b;
+  display:grid;
+  grid-template-columns:38px 1fr auto;
+  align-items:stretch;
+}
+.cardmain{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  padding:0 10px;
+}
+.owner-line{
+  max-width:100%;
+  margin-top:3px;
+  color:#8d97a8;
+  font:10px "Share Tech Mono",monospace;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.cardtools{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:0 8px 0 4px;
+}
+.ipva-toggle{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  color:#a9a2a0;
+  font:10px "Share Tech Mono",monospace;
+  cursor:pointer;
+  white-space:nowrap;
+  user-select:none;
+}
+.ipva-toggle input{
+  width:14px;
+  height:14px;
+  margin:0;
+  accent-color:#d6a11a;
+  cursor:pointer;
+}
+.ipva-toggle.checked{color:#f0c75a}
+.cardtools .delete-text{
+  border:0;
+  border-left:1px solid #3b2327;
+  background:transparent;
+  color:#ff5360;
+  padding:0 8px;
+  font:10px "Share Tech Mono",monospace;
+  cursor:pointer;
+  min-height:28px;
+}
+.cardtools .delete-text:hover{color:#fff;background:#3a0f13}
+
 </style>
 </head>
 <body>
@@ -246,16 +311,21 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 <div class="title">Resumo</div>
 <div class="stat"><div class="stathead"><span>🚗 Total</span><span id="total">8</span></div><div class="bar"><div class="fill" style="width:100%"></div></div></div>
 <div class="stat"><div class="stathead"><span>🟢 Na garagem</span><span id="garage">6</span></div><div class="bar"><div class="fill green" id="gbar"></div></div></div>
-<div class="stat"><div class="stathead"><span>🔴 Detidos</span><span id="detained">2</span></div><div class="bar"><div class="fill red" id="rbar"></div></div></div>
+<div class="stat"><div class="stathead"><span>🔴 Detidos</span><span id="detained">2</span></div><div class="bar"><div class="fill red" id="rbar"></div></div></div><div class="stat"><div class="stathead"><span>🟡 IPVA em atraso</span><span id="ipvaCount">0</span></div><div class="bar"><div class="fill" id="ipvaBar" style="background:#d6a11a"></div></div></div>
 <div class="info"><div class="title">Informações</div><div class="row"><span>Organização</span><b>RZ Crew</b></div><div class="row"><span>Sistema</span><b>RZ Garage</b></div><div class="row"><span>Atualização</span><b>agora</b></div></div>
 </aside>
 <section class="main">
   <div class="title">RZ Crew • Garagem</div>
   <div class="managebar">
     <button class="manage-btn locked" id="addBtn">＋ ADICIONAR VEÍCULO</button>
-    <span class="manage-hint" id="manageHint">🔒 Entre com Discord para adicionar ou remover veículos</span>
+    <span class="manage-hint" id="ipvaLegend">☑ IPVA é independente do status</span><span class="manage-hint" id="manageHint">🔒 Entre com Discord para adicionar ou remover veículos</span>
   </div>
-  <div class="head"><div class="search"><span>⌕</span><input id="search" placeholder="Pesquisar veículo, placa ou proprietário..."></div><div class="tabs"><button class="tab active" data-f="todos">Todos</button><button class="tab" data-f="garagem">Garagem</button><button class="tab" data-f="detido">Detidos</button></div></div><div class="grid" id="grid"></div></section>
+  <div class="head"><div class="search"><span>⌕</span><input id="search" placeholder="Pesquisar veículo, placa ou proprietário..."></div><div class="tabs">
+  <button class="tab active" data-f="todos">Todos</button>
+  <button class="tab" data-f="garagem">Garagem</button>
+  <button class="tab" data-f="detido">Detidos</button>
+  <button class="tab ipva-tab" data-f="ipva">IPVA</button>
+</div></div><div class="grid" id="grid"></div></section>
 </main></div>
 
 
@@ -358,13 +428,15 @@ let isGarageAdmin = false;
 let seedRunning = false;
 
 function normalizeCar(row) {
+  const legacyIpva = row.status === "ipva";
   return {
     id: row.id,
     model: row.model,
     plate: row.plate,
     owner: row.owner || "RZ Crew",
     owner_discord_id: row.owner_discord_id || "",
-    status: row.status || "garagem",
+    status: legacyIpva ? "garagem" : (row.status || "garagem"),
+    ipva_em_atraso: Boolean(row.ipva_em_atraso || legacyIpva),
     img: row.image_url || "./assets/clubviii.jpg"
   };
 }
@@ -375,43 +447,123 @@ function render() {
   const list = cars.filter(c =>
     (filter === "todos" ||
      (filter === "garagem" && c.status === "garagem") ||
-     (filter === "detido" && c.status === "detido")) &&
+     (filter === "detido" && c.status === "detido") ||
+     (filter === "ipva" && c.ipva_em_atraso)) &&
     (`${c.model} ${c.plate} ${c.owner}`).toLowerCase().includes(q)
   );
 
   $("grid").innerHTML = list.length ? list.map(c => {
     const isDet = c.status === "detido";
-    const statusText =
-      c.status === "garagem" ? "Na garagem" :
-      c.status === "detido" ? "Detido" :
-      c.status === "fora" ? "Fora da garagem" :
-      c.status === "ipva" ? "IPVA" : c.status;
-
-    const statusClass = c.status === "detido" ? "det" :
-      (c.status === "fora" || c.status === "ipva") ? "out" : "";
+    const statusText = isDet ? "Detido" : "Na garagem";
+    const statusClass = isDet ? "det" : "";
 
     return `<article class="card ${isDet ? "detido" : ""}" onclick="toggleVehicleStatus('${c.id}')">
-      ${isGarageAdmin ? `<button class="delete-mini" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">×</button>` : ""}
+      ${isGarageAdmin ? `<button class="delete-mini" title="Remover veículo" aria-label="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">×</button>` : ""}
       <div class="photo">
         <img class="car-photo" src="${c.img}" alt="${c.model}">
         <div class="plate-ref"><span class="plate-main">${c.plate}</span></div>
       </div>
       <div class="cardinfo">
         <div class="iconbox">🚘</div>
-        <div class="cardmain"><div class="model">${c.model}</div></div>
-        <div class="cardstatus ${statusClass}">${statusText}</div>
-        ${isGarageAdmin ? `<button class="delete-text" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">REMOVER</button>` : ""}
+        <div class="cardmain">
+          <div class="model">${c.model}</div>
+          <div class="owner-line">👤 ${c.owner || "Sem proprietário"}</div>
+        </div>
+        <div class="cardtools">
+          <div class="cardstatus ${statusClass}">${statusText}</div>
+          <label class="ipva-toggle ${c.ipva_em_atraso ? "checked" : ""}"
+                 title="Marcar IPVA em atraso"
+                 onclick="event.stopPropagation()">
+            <input type="checkbox"
+                   ${c.ipva_em_atraso ? "checked" : ""}
+                   onchange="toggleIPVA('${c.id}', this.checked)">
+            IPVA
+          </label>
+          ${isGarageAdmin ? `<button class="delete-text" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">REMOVER</button>` : ""}
+        </div>
       </div>
     </article>`;
   }).join("") : `<div class="empty">Nenhum veículo encontrado.</div>`;
 
   const g = cars.filter(c => c.status === "garagem").length;
   const d = cars.filter(c => c.status === "detido").length;
+  const i = cars.filter(c => c.ipva_em_atraso).length;
+
   $("total").textContent = cars.length;
   $("garage").textContent = g;
   $("detained").textContent = d;
+  if($("ipvaCount")) $("ipvaCount").textContent = i;
   $("gbar").style.width = (cars.length ? (g / cars.length) * 100 : 0) + "%";
   $("rbar").style.width = (cars.length ? (d / cars.length) * 100 : 0) + "%";
+  if($("ipvaBar")) $("ipvaBar").style.width = (cars.length ? (i / cars.length) * 100 : 0) + "%";
+}
+
+async function showSeedFallback(){
+  cars = seedVehicles.map((v, i) => ({
+    id: `seed-${i + 1}`,
+    model: v.model,
+    plate: v.plate,
+    owner: v.owner || "RZ Crew",
+    owner_discord_id: v.owner_discord_id || "",
+    status: v.status === "ipva" ? "garagem" : (v.status || "garagem"),
+    ipva_em_atraso: v.status === "ipva",
+    img: v.img || "./assets/clubviii.jpg"
+  }));
+  render();
+}
+
+async function toggleIPVA(id, checked){
+  const car = cars.find(c => String(c.id) === String(id));
+  if(!car) return;
+
+  const oldValue = Boolean(car.ipva_em_atraso);
+  car.ipva_em_atraso = Boolean(checked);
+  render();
+
+  // Seed fallback is local-only until migrated.
+  if(String(id).startsWith("seed-")) return;
+
+  const { error } = await supabaseClient
+    .from("vehicles")
+    .update({ ipva_em_atraso: Boolean(checked) })
+    .eq("id", car.id);
+
+  if(error){
+    car.ipva_em_atraso = oldValue;
+    render();
+    console.error(error);
+    alert("Não foi possível atualizar o IPVA.\n\n" + error.message);
+  }
+}
+
+async function toggleVehicleStatus(id){
+  const car = cars.find(c => String(c.id) === String(id));
+  if(!car) return;
+
+  // Vehicle click remains ONLY the garage/detido toggle.
+  const newStatus = car.status === "garagem" ? "detido" : "garagem";
+  const oldStatus = car.status;
+
+  if(String(id).startsWith("seed-")){
+    car.status = newStatus;
+    render();
+    return;
+  }
+
+  car.status = newStatus;
+  render();
+
+  const { error } = await supabaseClient
+    .from("vehicles")
+    .update({ status: newStatus })
+    .eq("id", car.id);
+
+  if(error){
+    car.status = oldStatus;
+    render();
+    console.error(error);
+    alert("Não foi possível alterar o status.\n\n" + error.message);
+  }
 }
 
 async function showSeedFallback(){
@@ -473,7 +625,8 @@ async function migrateReferenceVehiclesIfNeeded(){
       plate: v.plate,
       owner: v.owner || "RZ Crew",
       owner_discord_id: v.owner_discord_id || "",
-      status: v.status || "garagem",
+      status: v.status === "ipva" ? "garagem" : (v.status || "garagem"),
+      ipva_em_atraso: v.status === "ipva",
       image_url: new URL(v.img, window.location.href).href
     }));
 
@@ -496,10 +649,18 @@ async function toggleVehicleStatus(id) {
   const car = cars.find(c => String(c.id) === String(id));
   if(!car) return;
 
-  const oldStatus = car.status;
-  const newStatus = oldStatus === "garagem" ? "detido" : "garagem";
+  // Clique alterna entre os 3 estados:
+  // Na garagem -> Detido -> IPVA em atraso -> Na garagem
+  const nextStatus = {
+    garagem: "detido",
+    detido: "ipva",
+    ipva: "garagem"
+  };
 
-  // Seed cards are not database rows yet.
+  const newStatus = nextStatus[car.status] || "garagem";
+  const oldStatus = car.status;
+
+  // Fallback local enquanto a lista inicial ainda não estiver migrada.
   if(String(id).startsWith("seed-")) {
     car.status = newStatus;
     render();
@@ -762,6 +923,7 @@ $("confirmAdd").onclick = async () => {
       owner,
       owner_discord_id: ownerDiscordId,
       status: "garagem",
+      ipva_em_atraso: false,
       image_url: imageUrl
     })
     .select()
