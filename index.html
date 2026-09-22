@@ -198,6 +198,24 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
   margin-top:15px;width:100%;padding:12px;border:1px solid #5865f2;background:#151824;color:#fff;
   cursor:pointer;font-weight:700;
 }
+
+.photo-upload-wrap{display:grid;gap:9px}
+.photo-drop{
+  position:relative;border:1px dashed #4a5364;background:#0d1119;min-height:155px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  cursor:pointer;transition:.2s;
+}
+.photo-drop:hover{border-color:var(--red);background:#120b0d}
+.photo-drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.photo-drop-content{text-align:center;color:#858d9b;pointer-events:none;padding:18px}
+.photo-drop-content strong{display:block;color:#fff;font-size:16px;margin-bottom:5px;text-transform:uppercase}
+.photo-drop-content span{font:11px "Share Tech Mono",monospace}
+.photo-preview{
+  display:none;width:100%;height:155px;object-fit:contain;background:#0a0d12;
+}
+.photo-preview.visible{display:block}
+.photo-drop.has-image .photo-drop-content{display:none}
+.photo-help{color:#707888;font:10px "Share Tech Mono",monospace}
 </style>
 </head>
 <body>
@@ -259,6 +277,20 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
         <input id="newModel" placeholder="Modelo" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
         <input id="newPlate" placeholder="Placa" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
         <input id="newOwner" placeholder="Proprietário" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
+<input id="newOwnerDiscordId" placeholder="ID Discord do proprietário (opcional)" style="padding:11px;background:#11151d;border:1px solid #303746;color:#fff">
+
+        <div class="photo-upload-wrap">
+          <div class="photo-drop" id="photoDrop">
+            <img id="photoPreview" class="photo-preview" alt="Pré-visualização do veículo">
+            <div class="photo-drop-content">
+              <strong>📷 ADICIONAR FOTO</strong>
+              <span>Clique aqui para escolher a imagem do veículo</span>
+            </div>
+            <input id="newPhoto" type="file" accept="image/*">
+          </div>
+          <div class="photo-help">PNG, JPG ou WEBP • recomendado: fundo transparente ou imagem recortada do veículo</div>
+        </div>
+
         <button class="demo-login" id="confirmAdd">ADICIONAR</button>
       </div>
     </div>
@@ -268,79 +300,20 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-
-let currentUser = null; // Real Discord OAuth will set this object later.
-
-function openAuthModal(){
-  $("authModalBg").classList.add("open");
-}
-function closeAuthModal(){
-  $("authModalBg").classList.remove("open");
-}
-function updateAuthUI(){
-  const logged = !!currentUser;
-  $("loginBtn").style.display = logged ? "none" : "inline-block";
-  $("discordUser").classList.toggle("visible", logged);
-  $("addBtn").classList.toggle("locked", !logged);
-  $("manageHint").textContent = logged
-    ? "✓ Logado: você pode adicionar e remover veículos"
-    : "🔒 Entre com Discord para adicionar ou remover veículos";
-  if(logged){
-    $("discordName").textContent = currentUser.username || "Discord";
-    $("logoutBtn").style.display = "inline-block";
-  }else{
-    $("logoutBtn").style.display = "none";
-  }
-  render();
-}
-function requireLogin(action){
-  if(currentUser) return true;
-  openAuthModal();
-  return false;
-}
-function requestDelete(id){
-  if(!requireLogin("remover")) return;
-  const car = cars.find(c=>c.id===id);
-  if(!car) return;
-  if(!confirm(`Remover ${car.model} (${car.plate}) da garagem?`)) return;
-  const i = cars.indexOf(car);
-  if(i>-1) cars.splice(i,1);
-  render();
-}
-function addVehicle(){
-  if(!requireLogin("adicionar")) return;
-  $("addModalBg").classList.add("open");
-}
-function closeAddModal(){
-  $("addModalBg").classList.remove("open");
-}
-
-
 const SUPABASE_URL = "https://roxwqootdbxfwmwonijx.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_BpHZnHMbf9s-lqUMa3T16g_qGY0-WdB";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-});
-
-async function signInWithDiscord(){
-  const { error } = await supabaseClient.auth.signInWithOAuth({
-    provider: "discord",
-    options: { redirectTo: "https://katycatlolzin-source.github.io/rz-garage/" }
-  });
-  if(error){
-    console.error(error);
-    alert("Não foi possível iniciar o login com Discord.\n\n" + error.message);
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   }
-}
+);
 
-async function signOutDiscord(){
-  const { error } = await supabaseClient.auth.signOut();
-  if(error){
-    alert("Não foi possível sair.\n\n" + error.message);
-  }
-}
+const $ = id => document.getElementById(id);
 
-const cars=[
+const seedVehicles = [
+
 {id:1,model:"DRAUGUR",plate:"313QW7L",owner:"RZ Crew",status:"ipva",img:"./assets/drau.jpg",statusLabel:"IPVA EM DÉBITO"},
 {id:2,model:"KANJO SJ",plate:"A04DENO",owner:"RZ Crew",status:"garagem",img:"./assets/kanjo1.jpg"},
 {id:3,model:"CLUB VIII",plate:"R9WEJ1A",owner:"RZ Crew",status:"garagem",img:"./assets/clubviii.jpg"},
@@ -362,28 +335,56 @@ const cars=[
 {id:19,model:"S95",plate:"S6KM51M",owner:"RZ Crew",status:"fora",img:"./assets/s95_3.jpg",statusLabel:"FORA DA GARAGEM"},
 {id:20,model:"BF",plate:"U3PMS75",owner:"RZ Crew",status:"garagem",img:"./assets/bf.jpg"},
 {id:21,model:"STILLETTO",plate:"N2VT67C",owner:"RZ Crew",status:"garagem",img:"./assets/stiletto.jpg"}
-];
+].map(v => ({
+  model: v.model,
+  plate: v.plate,
+  owner: v.owner || "RZ Crew",
+  owner_discord_id: v.owner_discord_id || "",
+  status: v.status || "garagem",
+  image_url: new URL(v.img, window.location.href).href
+}));
 
-let filter="todos",selected=null;
-const $=id=>document.getElementById(id);
-function render(){
-  let q=$("search").value.toLowerCase(), list=cars.filter(c=>
-    (filter=="todos"||(filter=="garagem"&&c.status=="garagem")||(filter=="detido"&&c.status=="detido")) &&
+let cars = [];
+let filter = "todos";
+let currentUser = null;
+let isGarageAdmin = false;
+let seedRunning = false;
+
+function normalizeCar(row) {
+  return {
+    id: row.id,
+    model: row.model,
+    plate: row.plate,
+    owner: row.owner || "RZ Crew",
+    owner_discord_id: row.owner_discord_id || "",
+    status: row.status || "garagem",
+    img: row.image_url || "./assets/clubviii.jpg"
+  };
+}
+
+function render() {
+  const q = $("search").value.toLowerCase().trim();
+
+  const list = cars.filter(c =>
+    (filter === "todos" ||
+     (filter === "garagem" && c.status === "garagem") ||
+     (filter === "detido" && c.status === "detido")) &&
     (`${c.model} ${c.plate} ${c.owner}`).toLowerCase().includes(q)
   );
 
-  $("grid").innerHTML=list.length?list.map(c=>{
-    const isDet=c.status=="detido";
+  $("grid").innerHTML = list.length ? list.map(c => {
+    const isDet = c.status === "detido";
     const statusText =
-      c.status=="garagem" ? "Na garagem" :
-      c.status=="detido" ? "Detido" :
-      c.status=="fora" ? "Na garagem" :
-      "IPVA";
-    const statusClass =
-      c.status=="detido" ? "det" :
-      (c.status=="fora" || c.status=="ipva") ? "out" : "";
+      c.status === "garagem" ? "Na garagem" :
+      c.status === "detido" ? "Detido" :
+      c.status === "fora" ? "Fora da garagem" :
+      c.status === "ipva" ? "IPVA" : c.status;
 
-    return `<article class="card ${isDet?"detido":""} ${currentUser?"admin-visible":""}" onclick="toggleVehicleStatus(${c.id})"><button class="delete-mini" title="Remover veículo" onclick="event.stopPropagation();requestDelete(${c.id})">×</button>
+    const statusClass = c.status === "detido" ? "det" :
+      (c.status === "fora" || c.status === "ipva") ? "out" : "";
+
+    return `<article class="card ${isDet ? "detido" : ""}" onclick="toggleVehicleStatus('${c.id}')">
+      ${isGarageAdmin ? `<button class="delete-mini" title="Remover veículo" onclick="event.stopPropagation();requestDelete('${c.id}')">×</button>` : ""}
       <div class="photo">
         <img class="car-photo" src="${c.img}" alt="${c.model}">
         <div class="plate-ref"><span class="plate-main">${c.plate}</span></div>
@@ -394,54 +395,251 @@ function render(){
         <div class="cardstatus ${statusClass}">${statusText}</div>
       </div>
     </article>`;
-  }).join(""):`<div class="empty">Nenhum veículo encontrado.</div>`;
+  }).join("") : `<div class="empty">Nenhum veículo encontrado.</div>`;
 
-  let g=cars.filter(c=>c.status=="garagem").length,d=cars.filter(c=>c.status=="detido").length;
-  $("total").textContent=cars.length;
-  $("garage").textContent=g;
-  $("detained").textContent=d;
-  $("gbar").style.width=(g/cars.length*100)+"%";
-  $("rbar").style.width=(d/cars.length*100)+"%";
+  const g = cars.filter(c => c.status === "garagem").length;
+  const d = cars.filter(c => c.status === "detido").length;
+  $("total").textContent = cars.length;
+  $("garage").textContent = g;
+  $("detained").textContent = d;
+  $("gbar").style.width = (cars.length ? (g / cars.length) * 100 : 0) + "%";
+  $("rbar").style.width = (cars.length ? (d / cars.length) * 100 : 0) + "%";
 }
 
-function toggleVehicleStatus(id){
-  const car = cars.find(c => c.id === id);
-  if(!car) return;
+async function loadVehicles() {
+  const { data, error } = await supabaseClient
+    .from("vehicles")
+    .select("*")
+    .order("created_at", { ascending: true });
 
-  // Only the two operational statuses are toggled by clicking the vehicle.
-  car.status = car.status === "garagem" ? "detido" : "garagem";
+  if(error) {
+    console.error("vehicles select:", error);
+    cars = seedVehicles.map((v, i) => ({ ...v, id: `seed-${i + 1}` }));
+    render();
+    return;
+  }
+
+  if(!data || data.length === 0) {
+    cars = seedVehicles.map((v, i) => ({ ...v, id: `seed-${i + 1}` }));
+    render();
+    return;
+  }
+
+  cars = data.map(normalizeCar);
   render();
 }
 
-function openCar(id){
- selected=cars.find(c=>c.id==id);
- $("mtitle").textContent=selected.model;
- $("mmodel").textContent=selected.model;
- $("mplate").textContent=selected.plate;
- $("mowner").textContent=selected.owner;
- $("mstatus").textContent=selected.statusLabel || (selected.status=="garagem"?"🟢 NA GARAGEM":"🔴 DETIDO");
- $("mcar").innerHTML=`<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><img class="modal-car-photo" src="${selected.img}" alt="${selected.model}"><div class="plate-ref" style="bottom:14px">${selected.plate}</div></div>`;
- $("modalbg").classList.add("open");
-}
-$("close").onclick=()=>{$("modalbg").classList.remove("open");selected=null};
-$("modalbg").onclick=e=>{if(e.target===$("modalbg"))$("close").click()};
-$("search").oninput=render;
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");filter=b.dataset.f;render()
-});
-$("toggle").onclick=()=>{
-  if(!selected)return;
-  selected.status=selected.status=="garagem"?"detido":"garagem";
-  selected.statusLabel=selected.status=="detido"?"DETIDO":undefined;
-  openCar(selected.id);render()
-};
-$("remove").onclick=()=>{
-  if(!selected)return;
-  let i=cars.indexOf(selected);cars.splice(i,1);
-  $("close").click();render()
-};
+async function seedDatabaseFromReferenceCars() {
+  if(!isGarageAdmin || seedRunning) return;
+  seedRunning = true;
 
+  try {
+    const { count, error: countError } = await supabaseClient
+      .from("vehicles")
+      .select("*", { count: "exact", head: true });
+
+    if(countError || count !== 0) return;
+
+    const { error } = await supabaseClient.from("vehicles").insert(
+      seedVehicles.map(v => ({
+        model: v.model,
+        plate: v.plate,
+        owner: v.owner,
+        owner_discord_id: v.owner_discord_id,
+        status: v.status,
+        image_url: v.image_url
+      }))
+    );
+
+    if(error) {
+      console.error("seed vehicles:", error);
+      return;
+    }
+
+    await loadVehicles();
+  } finally {
+    seedRunning = false;
+  }
+}
+
+async function toggleVehicleStatus(id) {
+  const car = cars.find(c => String(c.id) === String(id));
+  if(!car) return;
+
+  const oldStatus = car.status;
+  const newStatus = oldStatus === "garagem" ? "detido" : "garagem";
+
+  // Seed cards are not database rows yet.
+  if(String(id).startsWith("seed-")) {
+    car.status = newStatus;
+    render();
+    return;
+  }
+
+  car.status = newStatus;
+  render();
+
+  const { error } = await supabaseClient
+    .from("vehicles")
+    .update({ status: newStatus })
+    .eq("id", car.id);
+
+  if(error) {
+    car.status = oldStatus;
+    render();
+    console.error(error);
+    alert("Não foi possível alterar o status.\n\n" + error.message);
+  }
+}
+
+function openAuthModal() {
+  $("authModalBg").classList.add("open");
+}
+
+function closeAuthModal() {
+  $("authModalBg").classList.remove("open");
+}
+
+function updateAuthUI() {
+  const logged = !!currentUser;
+
+  $("loginBtn").style.display = logged ? "none" : "inline-block";
+  $("discordUser").classList.toggle("visible", logged);
+  $("addBtn").classList.toggle("locked", !isGarageAdmin);
+
+  if(isGarageAdmin) {
+    $("manageHint").textContent = "✓ Administrador da garagem: pode adicionar e remover veículos";
+  } else if(logged) {
+    $("manageHint").textContent = "✓ Logado: status liberado; cadastro/remoção restritos";
+  } else {
+    $("manageHint").textContent = "🔒 Login e autorização necessários para adicionar/remover";
+  }
+
+  if(logged) {
+    $("discordName").textContent = currentUser.username || "Discord";
+    $("logoutBtn").style.display = "inline-block";
+  } else {
+    $("logoutBtn").style.display = "none";
+  }
+
+  render();
+}
+
+async function refreshAdminAccess() {
+  isGarageAdmin = false;
+  if(!currentUser) return;
+
+  const { data, error } = await supabaseClient
+    .from("garage_admins")
+    .select("user_id")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if(error) {
+    console.error("admin check:", error);
+    return;
+  }
+
+  isGarageAdmin = !!data;
+}
+
+async function requireAdmin() {
+  if(isGarageAdmin) return true;
+
+  if(!currentUser) {
+    openAuthModal();
+  } else {
+    alert("Sua conta do Discord não está autorizada para administrar a garagem.");
+  }
+
+  return false;
+}
+
+async function requestDelete(id) {
+  if(!(await requireAdmin())) return;
+
+  const car = cars.find(c => String(c.id) === String(id));
+  if(!car) return;
+
+  if(!confirm(`Remover ${car.model} (${car.plate}) da garagem?`)) return;
+
+  if(car.img && car.img.includes("/storage/v1/object/public/vehicle-images/")) {
+    const marker = "/storage/v1/object/public/vehicle-images/";
+    const path = car.img.split(marker)[1];
+    if(path) {
+      const { error: storageError } = await supabaseClient.storage
+        .from("vehicle-images")
+        .remove([decodeURIComponent(path)]);
+
+      if(storageError) console.warn("Storage delete:", storageError);
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from("vehicles")
+    .delete()
+    .eq("id", car.id);
+
+  if(error) {
+    console.error(error);
+    alert("Não foi possível remover o veículo.\n\n" + error.message);
+    return;
+  }
+
+  cars = cars.filter(c => String(c.id) !== String(id));
+  render();
+}
+
+async function addVehicle() {
+  if(!(await requireAdmin())) return;
+  $("addModalBg").classList.add("open");
+}
+
+function closeAddModal() {
+  $("addModalBg").classList.remove("open");
+}
+
+async function signInWithDiscord() {
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "discord",
+    options: {
+      redirectTo: "https://katycatlolzin-source.github.io/rz-garage/"
+    }
+  });
+
+  if(error) {
+    console.error(error);
+    alert("Não foi possível iniciar o login com Discord.\n\n" + error.message);
+  }
+}
+
+async function signOutDiscord() {
+  const { error } = await supabaseClient.auth.signOut();
+  if(error) {
+    alert("Não foi possível sair.\n\n" + error.message);
+  }
+}
+
+async function applySession(session) {
+  if(session?.user) {
+    const meta = session.user.user_metadata || {};
+    currentUser = {
+      id: session.user.id,
+      username: meta.global_name || meta.full_name || meta.name || meta.preferred_username || "Discord"
+    };
+  } else {
+    currentUser = null;
+  }
+
+  await refreshAdminAccess();
+  updateAuthUI();
+
+  if(isGarageAdmin) {
+    await seedDatabaseFromReferenceCars();
+  } else {
+    await loadVehicles();
+  }
+}
 
 $("loginBtn").onclick = signInWithDiscord;
 $("authClose").onclick = closeAuthModal;
@@ -451,55 +649,124 @@ $("addClose").onclick = closeAddModal;
 $("demoLogin").textContent = "CONTINUAR COM DISCORD";
 $("demoLogin").onclick = signInWithDiscord;
 
-supabaseClient.auth.onAuthStateChange((event, session) => {
-  if(session?.user){
-    const meta = session.user.user_metadata || {};
-    currentUser = {
-      id: session.user.id,
-      username: meta.global_name || meta.full_name || meta.name || meta.preferred_username || "Discord"
-    };
-  }else{
-    currentUser = null;
-  }
-  closeAuthModal();
-  updateAuthUI();
+$("authModalBg").onclick = e => {
+  if(e.target === $("authModalBg")) closeAuthModal();
+};
+$("addModalBg").onclick = e => {
+  if(e.target === $("addModalBg")) closeAddModal();
+};
+$("search").oninput = render;
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    filter = btn.dataset.f;
+    render();
+  };
 });
 
-supabaseClient.auth.getSession().then(({data, error}) => {
-  if(error){
-    console.error("Supabase session:", error);
-    currentUser = null;
-  }else if(data.session?.user){
-    const meta = data.session.user.user_metadata || {};
-    currentUser = {
-      id: data.session.user.id,
-      username: meta.global_name || meta.full_name || meta.name || meta.preferred_username || "Discord"
-    };
-  }else{
-    currentUser = null;
-  }
-  updateAuthUI();
+$("newPhoto").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  $("photoPreview").src = url;
+  $("photoPreview").classList.add("visible");
+  $("photoDrop").classList.add("has-image");
 });
-$("confirmAdd").onclick = ()=>{
-  if(!currentUser) return openAuthModal();
-  const model=$("newModel").value.trim();
-  const plate=$("newPlate").value.trim();
-  const owner=$("newOwner").value.trim() || currentUser.username;
-  if(!model || !plate){ alert("Preencha modelo e placa."); return; }
-  cars.push({
-    id:Date.now(), model, plate, owner, status:"garagem",
-    color:"blue", img:cars[0]?.img || "./assets/clubviii.jpg"
-  });
-  $("newModel").value=""; $("newPlate").value=""; $("newOwner").value="";
+
+$("confirmAdd").onclick = async () => {
+  if(!(await requireAdmin())) return;
+
+  const model = $("newModel").value.trim();
+  const plate = $("newPlate").value.trim();
+  const owner = $("newOwner").value.trim() || currentUser.username;
+  const ownerDiscordId = $("newOwnerDiscordId").value.trim();
+  const file = $("newPhoto").files[0];
+
+  if(!model || !plate) {
+    alert("Preencha modelo e placa.");
+    return;
+  }
+  if(!file) {
+    alert("Selecione uma foto do veículo.");
+    return;
+  }
+  if(file.size > 5 * 1024 * 1024) {
+    alert("A foto precisa ter no máximo 5 MB.");
+    return;
+  }
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : "jpg";
+  const path = `${currentUser.id}/${crypto.randomUUID()}.${safeExt}`;
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("vehicle-images")
+    .upload(path, file, {
+      contentType: file.type || "image/jpeg",
+      upsert: false
+    });
+
+  if(uploadError) {
+    console.error(uploadError);
+    alert("Não foi possível enviar a foto.\n\n" + uploadError.message);
+    return;
+  }
+
+  const { data: publicData } = supabaseClient.storage
+    .from("vehicle-images")
+    .getPublicUrl(path);
+
+  const imageUrl = publicData.publicUrl;
+
+  const { data: inserted, error: insertError } = await supabaseClient
+    .from("vehicles")
+    .insert({
+      model,
+      plate,
+      owner,
+      owner_discord_id: ownerDiscordId,
+      status: "garagem",
+      image_url: imageUrl
+    })
+    .select()
+    .single();
+
+  if(insertError) {
+    await supabaseClient.storage.from("vehicle-images").remove([path]);
+    console.error(insertError);
+    alert("Não foi possível salvar o veículo.\n\n" + insertError.message);
+    return;
+  }
+
+  cars.push(normalizeCar(inserted));
+
+  $("newModel").value = "";
+  $("newPlate").value = "";
+  $("newOwner").value = "";
+  $("newOwnerDiscordId").value = "";
+  $("newPhoto").value = "";
+  $("photoPreview").src = "";
+  $("photoPreview").classList.remove("visible");
+  $("photoDrop").classList.remove("has-image");
+
   closeAddModal();
   render();
 };
-$("authModalBg").onclick=e=>{ if(e.target===$("authModalBg")) closeAuthModal(); };
-$("addModalBg").onclick=e=>{ if(e.target===$("addModalBg")) closeAddModal(); };
 
+// Initial empty render; real data loads below.
 render();
 
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  setTimeout(() => applySession(session), 0);
+});
+
+supabaseClient.auth.getSession().then(({ data, error }) => {
+  if(error) {
+    console.error("session:", error);
+    applySession(null);
+  } else {
+    applySession(data.session);
+  }
+});
 </script>
-</body>
-</html>
-<script>updateAuthUI();</script>
