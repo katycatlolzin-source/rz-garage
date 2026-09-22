@@ -372,6 +372,48 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
   z-index:8 !important;
 }
 
+
+/* Plate strip: exactly between the photo and vehicle data */
+.photo{
+  overflow:hidden;
+}
+.plate-strip{
+  height:58px;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#0d121b;
+  border-top:1px solid #273143;
+  border-bottom:1px solid #4a566d;
+  z-index:5;
+  overflow:visible;
+}
+.plate-strip .plate-ref{
+  position:relative !important;
+  left:auto !important;
+  bottom:auto !important;
+  transform:perspective(200px) rotateX(3deg);
+  width:116px !important;
+  height:42px !important;
+  z-index:10 !important;
+  margin-top:0;
+}
+.plate-strip .plate-main{
+  padding-top:12px;
+  font-size:19px;
+  line-height:21px;
+}
+.cardinfo{
+  border-top:0;
+}
+.owner-line{
+  font-size:13px !important;
+  font-weight:600 !important;
+  color:#d0d4dc !important;
+  letter-spacing:.15px;
+}
+
 </style>
 </head>
 <body>
@@ -552,7 +594,11 @@ function render() {
             : c.ipva_em_atraso
               ? `<div class="photo-status ipva">IPVA EM ATRASO</div>`
               : ""}
-        <div class="plate-ref"><span class="plate-main">${c.plate}</span></div>
+      </div>
+      <div class="plate-strip">
+        <div class="plate-ref">
+          <span class="plate-main">${c.plate}</span>
+        </div>
       </div>
       <div class="cardinfo">
         <div class="iconbox">🚘</div>
