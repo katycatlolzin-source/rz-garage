@@ -266,6 +266,7 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 </div>
 <div class="modalbg" id="modalbg"><div class="modal"><div class="modalhead"><h2 id="mtitle">Veículo</h2><button class="btn" id="close">×</button></div><div class="modalbody"><div class="big"><div id="mcar" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"></div></div><div><div class="detail"><label>Modelo</label><b id="mmodel"></b></div><div class="detail"><label>Placa</label><b id="mplate"></b></div><div class="detail"><label>Proprietário</label><b id="mowner"></b></div><div class="detail"><label>Status</label><b id="mstatus"></b></div></div><div class="actions"><button class="primary" id="toggle">Alterar status</button><button>Editar veículo</button><button id="remove">Remover</button></div></div></div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
 let currentUser = null; // Real Discord OAuth will set this object later.
@@ -312,6 +313,31 @@ function addVehicle(){
 }
 function closeAddModal(){
   $("addModalBg").classList.remove("open");
+}
+
+
+const SUPABASE_URL = "https://roxwqootdbxfwmwonijx.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_BpHZnHMbf9s-lqUMa3T16g_qGY0-WdB";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
+async function signInWithDiscord(){
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "discord",
+    options: { redirectTo: "https://katycatlolzin-source.github.io/rz-garage/" }
+  });
+  if(error){
+    console.error(error);
+    alert("Não foi possível iniciar o login com Discord.\n\n" + error.message);
+  }
+}
+
+async function signOutDiscord(){
+  const { error } = await supabaseClient.auth.signOut();
+  if(error){
+    alert("Não foi possível sair.\n\n" + error.message);
+  }
 }
 
 const cars=[
@@ -417,17 +443,43 @@ $("remove").onclick=()=>{
 };
 
 
-$("loginBtn").onclick = openAuthModal;
+$("loginBtn").onclick = signInWithDiscord;
 $("authClose").onclick = closeAuthModal;
-$("logoutBtn").onclick = ()=>{ currentUser=null; updateAuthUI(); };
+$("logoutBtn").onclick = signOutDiscord;
 $("addBtn").onclick = addVehicle;
 $("addClose").onclick = closeAddModal;
-$("demoLogin").onclick = ()=>{
-  // Temporary local test only. This is NOT the real Discord OAuth flow.
-  currentUser = {username:"RZ Crew • teste"};
+$("demoLogin").textContent = "CONTINUAR COM DISCORD";
+$("demoLogin").onclick = signInWithDiscord;
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if(session?.user){
+    const meta = session.user.user_metadata || {};
+    currentUser = {
+      id: session.user.id,
+      username: meta.global_name || meta.full_name || meta.name || meta.preferred_username || "Discord"
+    };
+  }else{
+    currentUser = null;
+  }
   closeAuthModal();
   updateAuthUI();
-};
+});
+
+supabaseClient.auth.getSession().then(({data, error}) => {
+  if(error){
+    console.error("Supabase session:", error);
+    currentUser = null;
+  }else if(data.session?.user){
+    const meta = data.session.user.user_metadata || {};
+    currentUser = {
+      id: data.session.user.id,
+      username: meta.global_name || meta.full_name || meta.name || meta.preferred_username || "Discord"
+    };
+  }else{
+    currentUser = null;
+  }
+  updateAuthUI();
+});
 $("confirmAdd").onclick = ()=>{
   if(!currentUser) return openAuthModal();
   const model=$("newModel").value.trim();
