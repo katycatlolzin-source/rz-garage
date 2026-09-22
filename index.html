@@ -310,46 +310,7 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
 }
 
 
-/* FINAL CARD VISUALS */
-.plate-strip{
-  height:58px;
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#0d121b;
-  border-top:1px solid #273143;
-  border-bottom:1px solid #4a566d;
-  z-index:5;
-  overflow:visible;
-}
-.plate-strip .plate-ref{
-  position:relative !important;
-  left:auto !important;
-  bottom:auto !important;
-  transform:perspective(200px) rotateX(3deg);
-  width:116px !important;
-  height:42px !important;
-  z-index:10 !important;
-  margin-top:0;
-}
-.plate-strip .plate-main{
-  padding-top:12px;
-  font-size:19px;
-  line-height:21px;
-}
-.cardinfo{
-  border-top:0;
-}
-.owner-line{
-  font-size:13px !important;
-  font-weight:600 !important;
-  color:#d0d4dc !important;
-  letter-spacing:.15px;
-}
-
-
-/* STATUS RIBBON — keep visible between photo and plate */
+/* Final RZ Garage card layout */
 .photo{
   position:relative;
   overflow:hidden;
@@ -386,10 +347,41 @@ mask-image:linear-gradient(135deg,#000,transparent 78%);opacity:.18}
   background:linear-gradient(90deg,rgba(110,17,24,.96),rgba(142,39,31,.94),rgba(102,75,8,.96)) !important;
   color:#fff !important;
 }
-/* The ribbon is now at the bottom of the photo; the plate strip stays below it. */
 .plate-strip{
+  height:58px;
   position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#0d121b;
+  border-top:1px solid #273143;
+  border-bottom:1px solid #4a566d;
   z-index:30;
+  overflow:visible;
+}
+.plate-strip .plate-ref{
+  position:relative !important;
+  left:auto !important;
+  bottom:auto !important;
+  transform:perspective(200px) rotateX(3deg);
+  width:116px !important;
+  height:42px !important;
+  z-index:31 !important;
+  margin-top:0;
+}
+.plate-strip .plate-main{
+  padding-top:12px;
+  font-size:19px;
+  line-height:21px;
+}
+.cardinfo{
+  border-top:0;
+}
+.owner-line{
+  font-size:13px !important;
+  font-weight:600 !important;
+  color:#d0d4dc !important;
+  letter-spacing:.15px;
 }
 
 </style>
@@ -532,15 +524,14 @@ let isGarageAdmin = false;
 let seedRunning = false;
 
 function normalizeCar(row) {
-  const legacyIpva = row.status === "ipva";
   return {
     id: row.id,
     model: row.model,
     plate: row.plate,
     owner: row.owner || "RZ Crew",
     owner_discord_id: row.owner_discord_id || "",
-    status: legacyIpva ? "garagem" : (row.status || "garagem"),
-    ipva_em_atraso: Boolean(row.ipva_em_atraso || legacyIpva),
+    status: row.status === "ipva" ? "garagem" : (row.status || "garagem"),
+    ipva_em_atraso: Boolean(row.ipva_em_atraso),
     img: row.image_url || "./assets/clubviii.jpg"
   };
 }
@@ -634,7 +625,7 @@ async function toggleIPVA(id, checked){
   const nextValue = Boolean(checked);
   const oldValue = Boolean(car.ipva_em_atraso);
 
-  // Seed/fallback cards are not persisted until migration.
+  // Seed/fallback cards are local until migrated to Supabase.
   if(String(id).startsWith("seed-")){
     car.ipva_em_atraso = nextValue;
     render();
@@ -643,11 +634,10 @@ async function toggleIPVA(id, checked){
 
   try{
     const { data, error } = await supabaseClient
-      .from("vehicles")
-      .update({ ipva_em_atraso: nextValue })
-      .eq("id", car.id)
-      .select("id, ipva_em_atraso")
-      .single();
+      .rpc("set_vehicle_ipva", {
+        p_vehicle_id: car.id,
+        p_ipva: nextValue
+      });
 
     if(error) throw error;
 
@@ -655,13 +645,16 @@ async function toggleIPVA(id, checked){
       throw new Error("O Supabase não confirmou a alteração do IPVA.");
     }
 
-    // Only update the UI after the database confirms the change.
+    // Update the UI only after the database function confirms persistence.
     car.ipva_em_atraso = Boolean(data.ipva_em_atraso);
     render();
+
   }catch(error){
     car.ipva_em_atraso = oldValue;
     render();
+
     console.error("IPVA update:", error);
+
     alert(
       "Não foi possível salvar o IPVA.\n\n" +
       (error?.message || "Erro desconhecido")
